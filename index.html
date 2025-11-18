@@ -9,58 +9,45 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <style>
-        /* --- CUTE DESIGN (Pink & Pastel) --- */
-        :root {
-            --primary: #ffb7b2;
-            --secondary: #ffdac1;
-            --accent: #ff9aa2;
-            --bg: #fff0f5;
-            --text: #6e5773;
-            --white: #ffffff;
-        }
-        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; color: var(--text); }
+        /* --- CUTE THEME --- */
+        :root { --primary: #ffb7b2; --secondary: #ffdac1; --accent: #ff9aa2; --bg: #fff0f5; --text: #6e5773; --white: #ffffff; }
+        body { font-family: sans-serif; background-color: var(--bg); margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; color: var(--text); }
         .app-container { width: 100%; max-width: 400px; height: 90vh; background: var(--white); border-radius: 25px; box-shadow: 0 10px 25px rgba(255, 183, 178, 0.5); overflow: hidden; display: flex; flex-direction: column; position: relative; }
         
-        /* Login Screen Styling */
+        /* Login */
         #login-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, var(--primary), var(--secondary)); z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: top 0.5s ease-in-out; }
         input[type="password"] { padding: 12px; border-radius: 20px; border: none; text-align: center; width: 60%; margin-bottom: 15px; outline:none; }
-        .btn-login { background: var(--white); color: var(--accent); border: none; padding: 10px 30px; border-radius: 20px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .btn-login:active { transform: scale(0.95); }
-
-        /* Chat Interface Styling */
+        .btn-login { background: var(--white); color: var(--accent); border: none; padding: 10px 30px; border-radius: 20px; font-weight: bold; cursor: pointer; }
+        
+        /* Chat */
         header { background: var(--white); padding: 15px; display: flex; align-items: center; border-bottom: 1px solid #eee; }
         .chat-area { flex: 1; padding: 15px; overflow-y: auto; background: #fffafa; display: flex; flex-direction: column; gap: 10px; }
         .input-area { padding: 10px; background: var(--white); display: flex; gap: 10px; border-top: 1px solid #eee; }
         #msg-input { flex: 1; padding: 10px; border: 1px solid var(--secondary); border-radius: 20px; outline: none; }
         
-        /* Bubble Styling */
-        .message { max-width: 75%; padding: 10px 15px; border-radius: 18px; font-size: 0.95rem; word-wrap: break-word; animation: fadeIn 0.3s ease; }
+        /* Messages */
+        .message { max-width: 75%; padding: 10px 15px; border-radius: 18px; font-size: 0.95rem; word-wrap: break-word; }
         .message.me { align-self: flex-end; background: var(--primary); color: var(--white); border-bottom-right-radius: 4px; }
         .message.friend { align-self: flex-start; background: #e0e0e0; border-bottom-left-radius: 4px; }
         .media-content { max-width: 100%; border-radius: 10px; margin-top: 5px; border: 2px solid white; }
-        button { border: none; background: none; font-size: 1.2rem; cursor: pointer; transition: transform 0.2s; }
-        button:hover { transform: scale(1.1); }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        button { border: none; background: none; font-size: 1.2rem; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div class="app-container">
         <div id="login-screen">
-            <h1 style="color:white; text-shadow: 1px 1px 3px rgba(0,0,0,0.1);">💖 Secret Chat</h1>
-            <p style="color:white; margin-bottom:15px; font-size:0.9rem;">Enter Code: 1986</p>
-            <input type="password" id="password" placeholder="****">
+            <h1 style="color:white">💖 Secret Chat</h1>
+            <input type="password" id="password" placeholder="Password">
             <button class="btn-login" onclick="checkLogin()">Enter</button>
         </div>
 
         <header>
-            <div style="width:35px; height:35px; background:#eee; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-right:10px;">🦄</div>
-            <h3 style="margin:0; color: var(--accent);">Besties 💖</h3>
-            <button style="margin-left:auto; font-size:0.8rem; opacity:0.5;" onclick="clearChat()">🗑️</button>
+            <h3 style="margin:0; color: var(--accent);">Us 🦄</h3>
+            <button style="margin-left:auto; font-size:0.8rem;" onclick="clearChat()">🗑️</button>
         </header>
 
-        <div class="chat-area" id="chat-box">
-            </div>
+        <div class="chat-area" id="chat-box"></div>
 
         <div class="input-area">
             <input type="file" id="file-input" accept="image/*" style="display:none" onchange="handleFile()">
@@ -72,7 +59,7 @@
 
     <script>
         // -----------------------------------------------------------
-        // ✅ YOUR SPECIFIC FIREBASE CONFIGURATION
+        // ✅ FINAL CONFIGURATION (Updated with your URL)
         // -----------------------------------------------------------
         const firebaseConfig = {
             apiKey: "AIzaSyAPI_m98pfb5y6M5twMqL1oKXEpf1o8CCY",
@@ -81,68 +68,54 @@
             storageBucket: "cute-chat-app-85eed.firebasestorage.app",
             messagingSenderId: "127608145596",
             appId: "1:127608145596:web:925011780902e048dff2b9",
-            // Maine yeh URL tumhare Project ID ke hisaab se banaya hai:
+            // 👇 Ye raha aapka naya URL jo aapne diya
             databaseURL: "https://cute-chat-app-85eed-default-rtdb.firebaseio.com"
         };
-        // -----------------------------------------------------------
 
-        // 2. FIREBASE KO START KARNA
+        // Initialize Firebase
         let database;
         try {
             firebase.initializeApp(firebaseConfig);
             database = firebase.database();
-            console.log("Firebase connected!");
+            console.log("Connected!");
         } catch (e) {
-            console.error("Firebase Error:", e);
-            alert("Error: Firebase connect nahi hua. Console check karo.");
+            alert("Error connecting to database");
         }
 
-        // 3. LOGIN LOGIC
-        // Har baar naya random ID banega taki messages alag-alag side dikhen
-        let myId = localStorage.getItem('chat_user_id');
-        if (!myId) {
-            myId = "user_" + Math.random().toString(36).substr(2, 9);
-            localStorage.setItem('chat_user_id', myId);
-        }
+        // 1. LOGIN
+        const myId = "user_" + Math.random().toString(36).substr(2, 9); 
 
         function checkLogin() {
             const pass = document.getElementById('password').value;
             if (pass === "1986") {
                 document.getElementById('login-screen').style.top = "-100%";
-                loadMessages(); // Login ke baad messages load karo
+                loadMessages();
             } else {
-                alert("Wrong password! Try again. 🙈");
+                alert("Wrong password! 🚫");
             }
         }
 
-        // 4. MESSAGE BHEJNA
+        // 2. SEND
         function sendMessage(imageUrl = null) {
             const input = document.getElementById('msg-input');
             const text = input.value.trim();
 
-            // Agar text ya image hai, tabhi bhejo
             if (text !== "" || imageUrl) {
-                const msgData = {
+                // Database push
+                database.ref('chat_room').push({
                     senderId: myId,
                     text: text,
                     image: imageUrl,
                     timestamp: Date.now()
-                };
-
-                // Database mein bhejo
-                database.ref('chat_room').push(msgData);
-                input.value = ""; // Input box khali karo
+                });
+                input.value = "";
             }
         }
-
         function handleEnter(e) { if(e.key === 'Enter') sendMessage(); }
 
-        // 5. MESSAGES RECIEVE KARNA (Real-time)
+        // 3. RECEIVE
         function loadMessages() {
             const chatBox = document.getElementById('chat-box');
-            
-            // Jab bhi database mein naya message aaye:
-            database.ref('chat_room').off(); // Purane listeners hatao
             database.ref('chat_room').on('child_added', (snapshot) => {
                 const data = snapshot.val();
                 const isMe = data.senderId === myId;
@@ -151,41 +124,29 @@
                 div.classList.add('message', isMe ? 'me' : 'friend');
                 
                 let content = "";
-                if(data.image) {
-                    content += `<img src="${data.image}" class="media-content"><br>`;
-                }
-                if(data.text) {
-                    content += `<span>${data.text}</span>`;
-                }
+                if(data.image) content += `<img src="${data.image}" class="media-content"><br>`;
+                if(data.text) content += `<span>${data.text}</span>`;
                 
                 div.innerHTML = content;
                 chatBox.appendChild(div);
-                
-                // Auto scroll to bottom
                 chatBox.scrollTop = chatBox.scrollHeight;
             });
         }
 
-        // 6. PHOTO UPLOAD HANDLING
+        // 4. IMAGE
         function handleFile() {
             const file = document.getElementById('file-input').files[0];
             if (file) {
-                if(file.size > 1048576) { // 1MB Limit
-                    alert("Photo bahut badi hai! Pls chhoti photo bhejo."); 
-                    return; 
-                }
-
+                if(file.size > 2000000) { alert("Image too big! Max 2MB."); return; }
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    sendMessage(e.target.result); // Photo ko base64 mein bhej do
-                };
+                reader.onload = function(e) { sendMessage(e.target.result); };
                 reader.readAsDataURL(file);
             }
         }
 
-        // 7. DELETE CHAT
+        // 5. CLEAR
         function clearChat() {
-            if(confirm("Kya sabke liye chat delete karni hai?")) {
+            if(confirm("Delete chat for everyone?")) {
                 database.ref('chat_room').remove();
                 document.getElementById('chat-box').innerHTML = "";
             }
