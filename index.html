@@ -5,53 +5,109 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>BFF Chat Pro 💖</title>
     <style>
-        :root { --accent: #ff9aa2; --bg: #fff0f5; }
-        body { font-family: sans-serif; background: #fdfcfb; margin: 0; display: flex; justify-content: center; height: 100dvh; overflow: hidden; }
-        .app-container { width: 100%; max-width: 420px; background: white; display: flex; flex-direction: column; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
-        
-        /* Hidden Password Fix */
-        #login-screen { position: absolute; inset: 0; background: var(--accent); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; transition: 0.5s; }
-        input[type="password"] { padding: 12px; border-radius: 10px; border: none; margin: 10px; width: 70%; text-align: center; font-size: 1.2rem; }
+        :root { 
+            --primary: #ffb7b2; --accent: #ff9aa2; 
+            --bg: #fff0f5; --text: #5d4d5f; --white: #ffffff; 
+        }
 
-        header { padding: 15px; border-bottom: 1px solid #eee; display: flex; align-items: center; font-weight: bold; }
-        .chat-area { flex: 1; padding: 15px; overflow-y: auto; background: #fafafa; display: flex; flex-direction: column; gap: 10px; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+
+        body { 
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #fdfcfb 0%, #e2d1c3 100%);
+            margin: 0; display: flex; justify-content: center; height: 100dvh; overflow: hidden; 
+        }
+
+        .app-container { 
+            width: 100%; max-width: 420px; height: 100dvh; 
+            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px);
+            display: flex; flex-direction: column; position: relative;
+        }
+
+        /* --- SECURE LOGIN --- */
+        #login-screen { 
+            position: fixed; inset: 0; background: var(--accent); 
+            z-index: 2000; display: flex; flex-direction: column; 
+            justify-content: center; align-items: center; transition: 0.6s ease-in-out; 
+        }
+        .login-box { background: white; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; width: 85%; }
+        input[type="password"] { width: 100%; padding: 15px; border-radius: 15px; border: 1px solid #eee; margin: 20px 0; text-align: center; font-size: 1.2rem; background: #fafafa; }
+
+        /* --- HEADER --- */
+        header { 
+            padding: 15px 20px; display: flex; align-items: center; 
+            background: white; border-bottom: 1px solid rgba(0,0,0,0.05); 
+        }
+
+        /* --- CHAT AREA & SLIDE --- */
+        .chat-area { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
         
-        /* Message Styling */
-        .msg { padding: 10px 15px; border-radius: 15px; max-width: 80%; position: relative; transition: 0.3s; }
-        .me { align-self: flex-end; background: var(--accent); color: white; }
-        .friend { align-self: flex-start; background: #eee; }
-        
-        .input-area { padding: 10px; border-top: 1px solid #eee; display: flex; gap: 10px; }
-        #msg-input { flex: 1; padding: 10px; border-radius: 20px; border: 1px solid #ddd; outline: none; }
-        
-        /* DEBUG LOG (Neeche choti line) */
-        #debug-log { font-size: 10px; color: red; background: #fff; padding: 2px 10px; border-top: 1px solid #eee; text-align: center; }
-        .connected { color: green !important; }
+        .msg-row { position: relative; width: 100%; }
+        .swipe-action {
+            position: absolute; inset: 0; display: flex; align-items: center; 
+            padding: 0 25px; font-weight: bold; color: white; border-radius: 20px; z-index: 0;
+        }
+        .del-bg { background: #ff6b6b; justify-content: flex-start; }
+        .rep-bg { background: #4dabf7; justify-content: flex-end; }
+
+        .msg-bubble-container { position: relative; z-index: 1; transition: transform 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28); max-width: 85%; }
+        .me-container { align-self: flex-end; }
+        .fr-container { align-self: flex-start; }
+
+        .bubble { padding: 12px 18px; border-radius: 22px; font-size: 0.95rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); line-height: 1.4; }
+        .me-bubble { background: var(--accent); color: white; border-bottom-right-radius: 4px; }
+        .fr-bubble { background: white; color: var(--text); border-bottom-left-radius: 4px; }
+
+        .reply-tag { background: rgba(0,0,0,0.06); padding: 5px 10px; border-left: 3px solid var(--accent); border-radius: 6px; margin-bottom: 8px; font-size: 0.8rem; opacity: 0.8; }
+
+        /* --- REPLY BAR --- */
+        #reply-bar { display: none; background: #fff5f5; padding: 10px 20px; border-top: 1px solid #ffe3e3; border-left: 5px solid var(--accent); font-size: 0.85rem; }
+
+        /* --- INPUT --- */
+        .input-area { padding: 15px; display: flex; gap: 10px; align-items: center; background: white; border-top: 1px solid #f0f0f0; }
+        #msg-input { flex: 1; padding: 14px 20px; border-radius: 30px; border: 1px solid #f0f0f0; background: #fafafa; font-size: 1rem; }
     </style>
 </head>
 <body>
 
     <div id="login-screen">
-        <h2>💖 BFF SECURE</h2>
-        <input type="password" id="password" placeholder="Enter Secret Code">
-        <button onclick="checkLogin()" style="padding:10px 40px; border-radius:20px; border:none; background:white; color:var(--accent); font-weight:bold;">Unlock</button>
+        <div class="login-box">
+            <h2 style="color:var(--accent); margin:0;">BFF Chat Pro</h2>
+            <p style="color:#888; font-size: 0.9rem;">Private & Secure</p>
+            <input type="password" id="passInput" placeholder="Enter Password">
+            <button onclick="unlock()" style="width:100%; padding:15px; border-radius:15px; border:none; background:var(--accent); color:white; font-weight:bold; cursor:pointer;">Unlock Now</button>
+        </div>
     </div>
 
     <div class="app-container">
-        <header>🦄 Bestie <span id="typing" style="font-size: 10px; margin-left: 10px; display: none;">typing...</span></header>
+        <header>
+            <div style="font-size: 1.8rem;">🦄</div>
+            <div style="margin-left:12px">
+                <div style="font-weight:bold; font-size:1.1rem">Bestie</div>
+                <div id="typing" style="font-size:0.75rem; color:var(--accent); display:none;">typing...</div>
+            </div>
+            <button onclick="window.location.href='tel:7726859477'" style="margin-left:auto; border:none; background:none; font-size:1.4rem; cursor:pointer;">📞</button>
+        </header>
+
         <div class="chat-area" id="chat-box"></div>
-        <div id="debug-log">Status: Checking connection...</div>
+
+        <div id="reply-bar">
+            <div style="display:flex; justify-content:space-between">
+                <span id="reply-text" style="color:#666">Replying...</span>
+                <b onclick="cancelReply()" style="cursor:pointer">✕</b>
+            </div>
+        </div>
+
         <div class="input-area">
-            <input type="text" id="msg-input" placeholder="Type..." onkeypress="if(event.key==='Enter') send()">
-            <button onclick="send()" style="border:none; background:none; font-size:1.5rem">🚀</button>
+            <input type="text" id="msg-input" placeholder="Type message..." onkeypress="if(event.key==='Enter') send()">
+            <button onclick="send()" style="border:none; background:var(--accent); color:white; width:45px; height:45px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer;">🚀</button>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-        import { getDatabase, ref, push, onValue, onChildAdded, set } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+        import { getDatabase, ref, push, set, onValue, onChildAdded, remove } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
-        // CONFIG - Ek baar check karein ki ye URL sahi hai?
         const firebaseConfig = {
             apiKey: "AIzaSyAPI_m98pfb5y6M5twMqL1oKXEpf1o8CCY",
             databaseURL: "https://cute-chat-app-85eed-default-rtdb.firebaseio.com"
@@ -59,54 +115,93 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-        const log = document.getElementById('debug-log');
+        const myId = localStorage.getItem('chat_uid') || "u_" + Math.random().toString(36).substr(2, 4);
+        localStorage.setItem('chat_uid', myId);
 
-        // Connection Monitor
-        onValue(ref(db, ".info/connected"), (snap) => {
-            if (snap.val() === true) {
-                log.innerText = "Status: Connected ✅";
-                log.className = "connected";
-            } else {
-                log.innerText = "Status: Reconnecting... ❌ (Rules or Internet issue)";
-                log.className = "";
-            }
-        });
+        let activeReply = null;
 
-        let myId = "user_" + Math.random().toString(36).substr(2, 5);
-
-        window.checkLogin = () => {
-            if(document.getElementById('password').value === "1986") {
-                document.getElementById('login-screen').style.display = "none";
-                startListening();
-            } else { alert("Wrong Code!"); }
+        window.unlock = () => {
+            if(document.getElementById('passInput').value === "1986") {
+                document.getElementById('login-screen').style.transform = "translateY(-100%)";
+                init();
+            } else { alert("Wrong Password!"); }
         };
 
-        function startListening() {
-            const chatRef = ref(db, 'chat_room');
-            onChildAdded(chatRef, (snap) => {
-                const data = snap.val();
-                const box = document.getElementById('chat-box');
-                const div = document.createElement('div');
-                div.className = `msg ${data.senderId === myId ? 'me' : 'friend'}`;
-                div.innerText = data.text;
-                box.appendChild(div);
-                box.scrollTop = box.scrollHeight;
-            }, (error) => {
-                log.innerText = "Error: " + error.message;
+        function init() {
+            onChildAdded(ref(db, 'chat_room'), (snap) => render(snap.key, snap.val()));
+            onValue(ref(db, 'typing'), (snap) => {
+                const typing = snap.val() || {};
+                const isTyping = Object.keys(typing).some(id => id !== myId && typing[id]);
+                document.getElementById('typing').style.display = isTyping ? 'block' : 'none';
             });
         }
 
         window.send = () => {
-            const input = document.getElementById('msg-input');
-            if(!input.value) return;
+            const val = document.getElementById('msg-input').value.trim();
+            if(!val) return;
             push(ref(db, 'chat_room'), {
-                senderId: myId,
-                text: input.value,
-                ts: Date.now()
+                senderId: myId, text: val, replyTo: activeReply, ts: Date.now()
             });
-            input.value = "";
+            document.getElementById('msg-input').value = "";
+            cancelReply();
+        };
+
+        function render(id, data) {
+            const box = document.getElementById('chat-box');
+            const isMe = data.senderId === myId;
+            const row = document.createElement('div');
+            row.className = 'msg-row';
+            row.id = `row-${id}`;
+            
+            row.innerHTML = `
+                <div class="swipe-action del-bg">🗑️ Delete</div>
+                <div class="swipe-action rep-bg">🔄 Reply</div>
+                <div class="msg-bubble-container ${isMe ? 'me-container' : 'fr-container'}">
+                    <div class="bubble ${isMe ? 'me-bubble' : 'fr-bubble'}">
+                        ${data.replyTo ? `<div class="reply-tag">⤴️ ${data.replyTo}</div>` : ''}
+                        ${data.text}
+                    </div>
+                </div>
+            `;
+
+            // Gesture Logic
+            const bubbleCont = row.querySelector('.msg-bubble-container');
+            let startX = 0, moveX = 0;
+            
+            bubbleCont.ontouchstart = (e) => startX = e.touches[0].clientX;
+            bubbleCont.ontouchmove = (e) => {
+                moveX = e.touches[0].clientX - startX;
+                if(moveX > 100) moveX = 100; if(moveX < -100) moveX = -100;
+                bubbleCont.style.transform = `translateX(${moveX}px)`;
+            };
+            bubbleCont.ontouchend = () => {
+                if(moveX > 80) { if(confirm("Delete?")) remove(ref(db, `chat_room/${id}`)); location.reload(); }
+                else if(moveX < -80) prepareReply(data.text);
+                bubbleCont.style.transform = "translateX(0)";
+                moveX = 0;
+            };
+
+            box.appendChild(row);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function prepareReply(text) {
+            activeReply = text;
+            document.getElementById('reply-bar').style.display = 'block';
+            document.getElementById('reply-text').innerText = "Replying to: " + text;
+            document.getElementById('msg-input').focus();
+        }
+
+        window.cancelReply = () => {
+            activeReply = null;
+            document.getElementById('reply-bar').style.display = 'none';
+        };
+
+        document.getElementById('msg-input').oninput = () => {
+            set(ref(db, `typing/${myId}`), true);
+            clearTimeout(window.tOut);
+            window.tOut = setTimeout(() => set(ref(db, `typing/${myId}`), false), 2000);
         };
     </script>
 </body>
 </html>
-
