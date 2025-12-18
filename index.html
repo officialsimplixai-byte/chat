@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BFF Chat Pro</title>
+<title>BFF Chat</title>
 
 <style>
 :root{
@@ -132,9 +132,10 @@ button{
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getDatabase, ref, push, onChildAdded, set, remove, onValue } 
+import { getDatabase, ref, push, onChildAdded, onValue, set, remove }
 from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
+/* 🔥 FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyAPI_m98pfb5y6M5twMqL1oKXEpf1o8CCY",
   databaseURL: "https://cute-chat-app-85eed-default-rtdb.firebaseio.com"
@@ -143,100 +144,108 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
+/* USER ID */
 let myId = localStorage.getItem("bff_id");
 if(!myId){
-  myId="u_"+Math.random().toString(36).slice(2,9);
-  localStorage.setItem("bff_id",myId);
+  myId = "u_" + Math.random().toString(36).slice(2,9);
+  localStorage.setItem("bff_id", myId);
 }
 
 const chat = document.getElementById("chat");
+const msg = document.getElementById("msg");
 
-/* 🔥 AUTO DELETE AFTER 24H */
-const DAY = 24*60*60*1000;
+/* ⏱️ AUTO DELETE AFTER 24 HOURS */
+const DAY = 24 * 60 * 60 * 1000;
 
+/* LISTEN MESSAGES */
 onChildAdded(ref(db,"chat_room"), snap=>{
-  const d=snap.val();
-  if(Date.now()-d.ts > DAY){
-    remove(ref(db,`chat_room/${snap.key}`));
+  const d = snap.val();
+  const id = snap.key;
+
+  if(!d || !d.ts) return;
+
+  if(Date.now() - d.ts > DAY){
+    remove(ref(db,`chat_room/${id}`));
     return;
   }
-  render(snap.key,d);
+
+  render(id, d);
 });
 
-/* TYPING */
-document.getElementById("msg").oninput=()=>{
-  set(ref(db,"typing/"+myId),true);
+/* TYPING STATUS */
+msg.oninput = () => {
+  set(ref(db,`typing/${myId}`), true);
   clearTimeout(window.t);
-  window.t=setTimeout(()=>set(ref(db,"typing/"+myId),false),1500);
+  window.t = setTimeout(()=>{
+    set(ref(db,`typing/${myId}`), false);
+  },1500);
 };
 
-onValue(ref(db,"typing"),s=>{
-  const v=s.val()||{};
-  document.getElementById("typing").style.display=
-    Object.keys(v).some(i=>i!==myId&&v[i])?"block":"none";
+onValue(ref(db,"typing"), s=>{
+  const v = s.val() || {};
+  document.getElementById("typing").style.display =
+    Object.keys(v).some(i=>i!==myId && v[i]) ? "block" : "none";
 });
 
-/* SEND */
-window.send=()=>{
-  const t=msg.value.trim();
-  if(!t) return;
+/* SEND MESSAGE */
+window.send = () => {
+  const text = msg.value.trim();
+  if(!text) return;
+
   push(ref(db,"chat_room"),{
-    senderId:myId,
-    text:t,
-    ts:Date.now(),
-    deliveredTo:{[myId]:true},
-    seenBy:{[myId]:true}
+    senderId: myId,
+    text,
+    ts: Date.now(),
+    deliveredTo:{ [myId]: true },
+    seenBy:{ [myId]: true }
   });
-  msg.value="";
+
+  msg.value = "";
 };
 
-/* RENDER */
-function render(id,d){
-  if(document.getElementById(id)) return;
+/* RENDER MESSAGE */
+function render(id, d){
+  const row = document.createElement("div");
+  row.className = "row " + (d.senderId===myId ? "me":"fr");
+  row.id = id;
 
-  /* delivered */
+  /* DELIVERED */
   if(!d.deliveredTo?.[myId]){
-    set(ref(db,`chat_room/${id}/deliveredTo/${myId}`),true);
+    set(ref(db,`chat_room/${id}/deliveredTo/${myId}`), true);
   }
 
-  const row=document.createElement("div");
-  row.className="row "+(d.senderId===myId?"me":"fr");
-  row.id=id;
-
-  let status="";
-  if(d.senderId===myId){
-    if(d.seenBy && Object.keys(d.seenBy).length>1) status=" 👀 Seen";
-    else if(d.deliveredTo && Object.keys(d.deliveredTo).length>1) status=" ✓✓ Delivered";
-    else status=" ✓ Sent";
+  let status = "";
+  if(d.senderId === myId){
+    if(d.seenBy && Object.keys(d.seenBy).length > 1) status = " 👀 Seen";
+    else if(d.deliveredTo && Object.keys(d.deliveredTo).length > 1) status = " ✓✓ Delivered";
+    else status = " ✓ Sent";
+  } else {
+    set(ref(db,`chat_room/${id}/seenBy/${myId}`), true);
   }
 
-  row.innerHTML=`
+  row.innerHTML = `
     <div class="bubble">
       ${d.text}
       <div class="time">
         ${new Date(d.ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}
         ${status}
       </div>
-    </div>`;
+    </div>
+  `;
 
-  /* LONG PRESS DELETE (only my msg) */
+  /* LONG PRESS DELETE (ONLY MY MSG) */
   let timer;
-  row.onmousedown=row.ontouchstart=()=>{
-    timer=setTimeout(()=>{
+  row.onmousedown = row.ontouchstart = () => {
+    timer = setTimeout(()=>{
       if(d.senderId===myId && confirm("Delete message?")){
         remove(ref(db,`chat_room/${id}`));
       }
     },700);
   };
-  row.onmouseup=row.ontouchend=()=>clearTimeout(timer);
+  row.onmouseup = row.ontouchend = () => clearTimeout(timer);
 
   chat.appendChild(row);
-  chat.scrollTop=chat.scrollHeight;
-
-  /* SEEN */
-  if(d.senderId!==myId){
-    set(ref(db,`chat_room/${id}/seenBy/${myId}`),true);
-  }
+  chat.scrollTop = chat.scrollHeight;
 }
 </script>
 </body>
