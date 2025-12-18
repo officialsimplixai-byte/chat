@@ -1,296 +1,356 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BFF Chat</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BFF Chat Pro 💖</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-<style>
-:root{
-  --accent:#ff9aa2;
-  --bg:#fff5f7;
-  --me:#ff9aa2;
-  --fr:#ffffff;
-  --text:#444;
-}
-*{box-sizing:border-box}
+    <style>
+        /* --- THEME VARIABLES --- */
+        :root { 
+            --primary: #ffb7b2; 
+            --secondary: #ffdac1; 
+            --accent: #ff9aa2; 
+            --bg: #fff0f5; 
+            --text: #6e5773; 
+            --white: #ffffff; 
+            --blue-tick: #34b7f1; 
+            --grey-tick: #aaa; 
+        }
 
-body{
-  margin:0;
-  background:var(--bg);
-  font-family:system-ui,-apple-system;
-  display:flex;
-  justify-content:center;
-  height:100vh;
-}
+        /* GLOBAL RESET */
+        * { box-sizing: border-box; }
 
-/* LOGIN */
-#login{
-  position:fixed;
-  inset:0;
-  background:var(--accent);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  z-index:1000;
-}
-.login-box{
-  background:#fff;
-  padding:30px;
-  border-radius:20px;
-  width:85%;
-  max-width:320px;
-  text-align:center;
-}
-.login-box input{
-  width:100%;
-  padding:12px;
-  border-radius:15px;
-  border:1px solid #ddd;
-  margin:15px 0;
-  text-align:center;
-  font-size:1.1rem;
-}
-.login-box button{
-  width:100%;
-  padding:12px;
-  border:none;
-  border-radius:15px;
-  background:var(--accent);
-  color:white;
-  font-weight:bold;
-  cursor:pointer;
-}
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background-color: var(--bg); 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            height: 100dvh; /* For mobile browsers */
+            color: var(--text); 
+            overflow: hidden; /* Prevent background scrolling */
+        }
 
-/* CHAT */
-.app{
-  width:100%;
-  max-width:420px;
-  background:white;
-  display:none;
-  flex-direction:column;
-}
-header{
-  padding:12px 16px;
-  display:flex;
-  align-items:center;
-  gap:10px;
-  border-bottom:1px solid #eee;
-}
-.chat{
-  flex:1;
-  overflow-y:auto;
-  padding:12px;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
-.row{display:flex}
-.me{justify-content:flex-end}
-.fr{justify-content:flex-start}
+        /* --- APP CONTAINER (DESKTOP LOOK) --- */
+        .app-container { 
+            width: 100%; 
+            max-width: 400px; 
+            height: 90vh; 
+            background: var(--white); 
+            border-radius: 25px; 
+            box-shadow: 0 10px 25px rgba(255, 183, 178, 0.5); 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
+            position: relative; 
+        }
 
-.bubble{
-  max-width:80%;
-  padding:10px 14px;
-  border-radius:18px;
-  font-size:.95rem;
-  box-shadow:0 2px 6px rgba(0,0,0,.05);
-}
-.me .bubble{
-  background:var(--me);
-  color:white;
-  border-bottom-right-radius:4px;
-}
-.fr .bubble{
-  background:var(--fr);
-  color:var(--text);
-  border:1px solid #eee;
-  border-bottom-left-radius:4px;
-}
-.time{
-  font-size:.65rem;
-  opacity:.7;
-  margin-top:4px;
-  text-align:right;
-}
+        /* --- MOBILE RESPONSIVENESS (MAGIC HAPPENS HERE) --- */
+        @media (max-width: 480px) {
+            body {
+                background-color: var(--white); /* Match app bg */
+            }
+            .app-container {
+                max-width: 100%;
+                height: 100%; /* Full screen height */
+                border-radius: 0; /* No round corners on phone */
+                box-shadow: none; /* No shadow on phone */
+            }
+        }
 
-.input{
-  padding:10px;
-  display:flex;
-  gap:8px;
-  border-top:1px solid #eee;
-}
-textarea{
-  flex:1;
-  border-radius:20px;
-  padding:10px 14px;
-  border:1px solid #ddd;
-  resize:none;
-}
-button.send{
-  width:42px;
-  height:42px;
-  border:none;
-  border-radius:50%;
-  background:var(--accent);
-  color:white;
-  font-size:1.2rem;
-}
-</style>
+        /* --- LOGIN SCREEN --- */
+        #login-screen { 
+            position: absolute; top: 0; left: 0; 
+            width: 100%; height: 100%; 
+            background: linear-gradient(135deg, var(--primary), var(--secondary)); 
+            z-index: 100; 
+            display: flex; flex-direction: column; 
+            justify-content: center; align-items: center; 
+            transition: top 0.5s ease-in-out; 
+        }
+        input[type="password"] { 
+            padding: 15px; 
+            border-radius: 30px; 
+            border: none; 
+            text-align: center; 
+            width: 70%; 
+            margin-bottom: 20px; 
+            outline:none; 
+            font-size: 16px; /* Prevents zoom on iPhone */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .btn-login { 
+            background: var(--white); color: var(--accent); 
+            border: none; padding: 12px 40px; 
+            border-radius: 30px; font-weight: bold; 
+            cursor: pointer; font-size: 1rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        /* --- CHAT HEADER --- */
+        header { 
+            background: var(--white); 
+            padding: 15px; 
+            display: flex; align-items: center; 
+            border-bottom: 1px solid #f0f0f0; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+            z-index: 10;
+        }
+        .header-info { display: flex; flex-direction: column; margin-left: 12px; }
+        .status-text { font-size: 0.75rem; color: var(--accent); font-weight: bold; display: none; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.5; } }
+
+        /* --- CHAT AREA --- */
+        .chat-area { 
+            flex: 1; 
+            padding: 15px; 
+            overflow-y: auto; 
+            background: #fffafa; 
+            display: flex; flex-direction: column; gap: 8px; 
+            scroll-behavior: smooth;
+        }
+
+        /* --- INPUT AREA --- */
+        .input-area { 
+            padding: 10px 15px; 
+            background: var(--white); 
+            display: flex; gap: 10px; 
+            border-top: 1px solid #f0f0f0; 
+            align-items: center;
+        }
+        #msg-input { 
+            flex: 1; 
+            padding: 12px 15px; 
+            border: 1px solid var(--secondary); 
+            border-radius: 25px; 
+            outline: none; 
+            font-size: 16px; /* Prevents zoom on iPhone */
+            background: #fffcfc;
+        }
+        button { border: none; background: none; font-size: 1.4rem; cursor: pointer; padding: 0 5px; }
+        
+        /* --- MESSAGES BUBBLES --- */
+        .message-container { display: flex; flex-direction: column; max-width: 80%; }
+        .message-container.me { align-self: flex-end; align-items: flex-end; }
+        .message-container.friend { align-self: flex-start; align-items: flex-start; }
+
+        .message { 
+            padding: 10px 16px; 
+            border-radius: 20px; 
+            font-size: 0.95rem; 
+            line-height: 1.4;
+            word-wrap: break-word; 
+            position: relative; 
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .message.me { 
+            background: var(--primary); 
+            color: var(--white); 
+            border-bottom-right-radius: 4px; 
+        }
+        .message.friend { 
+            background: #f0f0f0; 
+            color: #333; 
+            border-bottom-left-radius: 4px; 
+        }
+        
+        .media-content { 
+            max-width: 100%; 
+            border-radius: 12px; 
+            margin-top: 5px; 
+            border: 2px solid rgba(255,255,255,0.5); 
+        }
+        
+        /* TICKS */
+        .tick { font-size: 0.65rem; margin-top: 3px; margin-right: 2px; color: rgba(255,255,255,0.7); align-self: flex-end; }
+        .tick.blue { color: #e0ffff; font-weight: bold; text-shadow: 0 0 2px rgba(0,0,0,0.1); } /* Light blue for visibility on pink */
+    </style>
 </head>
-
 <body>
 
-<!-- LOGIN -->
-<div id="login">
-  <div class="login-box">
-    <h2 style="color:var(--accent)">BFF Chat 💖</h2>
-    <input type="password" id="pass" placeholder="Enter password">
-    <button id="unlockBtn">Unlock</button>
-  </div>
-</div>
+    <div class="app-container">
+        <div id="login-screen">
+            <h1 style="color:white; margin-bottom: 5px;">💖 Secret Chat</h1>
+            <p style="color:white; opacity:0.8; margin-bottom: 20px;">Besties Only</p>
+            <input type="password" id="password" placeholder="Enter Code">
+            <button class="btn-login" onclick="checkLogin()">Enter</button>
+        </div>
 
-<!-- CHAT APP -->
-<div class="app" id="app">
-  <header>
-    🦄 <b>Bestie</b>
-    <span id="typing" style="font-size:.75rem;color:var(--accent);display:none;">typing…</span>
-  </header>
+        <header>
+            <div style="font-size: 1.8rem;">🦄</div>
+            <div class="header-info">
+                <h3 style="margin:0; color: var(--accent); font-size: 1.1rem;">Bestie</h3>
+                <span id="typing-indicator" class="status-text">typing...</span>
+            </div>
+            <button style="margin-left:auto; font-size:1rem; opacity:0.6;" onclick="clearChat()">🗑️</button>
+        </header>
 
-  <div class="chat" id="chat"></div>
+        <div class="chat-area" id="chat-box"></div>
 
-  <div class="input">
-    <textarea id="msg" rows="1" placeholder="Type message…"></textarea>
-    <button class="send" id="sendBtn">🚀</button>
-  </div>
-</div>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import {
-  getDatabase, ref, push, onChildAdded, onValue,
-  set, remove, query, orderByChild
-} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
-
-/* FIREBASE */
-const firebaseConfig = {
-  apiKey: "AIzaSyAPI_m98pfb5y6M5twMqL1oKXEpf1o8CCY",
-  databaseURL: "https://cute-chat-app-85eed-default-rtdb.firebaseio.com"
-};
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-
-/* USER ID */
-let myId = localStorage.getItem("bff_id");
-if(!myId){
-  myId="u_"+Math.random().toString(36).slice(2,9);
-  localStorage.setItem("bff_id",myId);
-}
-
-/* ELEMENTS */
-const login = document.getElementById("login");
-const appBox = document.getElementById("app");
-const unlockBtn = document.getElementById("unlockBtn");
-const chat = document.getElementById("chat");
-const msg = document.getElementById("msg");
-const typingEl = document.getElementById("typing");
-
-/* PASSWORD UNLOCK */
-unlockBtn.addEventListener("click", ()=>{
-  if(document.getElementById("pass").value === "1986"){
-    login.style.display="none";
-    appBox.style.display="flex";
-    initChat();
-  }else{
-    alert("Wrong password ❌");
-  }
-});
-
-/* CHAT INIT */
-const DAY = 24*60*60*1000;
-
-function initChat(){
-  const chatQuery = query(ref(db,"chat_room"), orderByChild("ts"));
-
-  onChildAdded(chatQuery, snap=>{
-    const d = snap.val(), id = snap.key;
-    if(!d || !d.ts) return;
-    if(Date.now()-d.ts > DAY){
-      remove(ref(db,`chat_room/${id}`));
-      return;
-    }
-    render(id,d);
-  });
-
-  msg.oninput=()=>{
-    set(ref(db,`typing/${myId}`),true);
-    clearTimeout(window.t);
-    window.t=setTimeout(()=>set(ref(db,`typing/${myId}`),false),1500);
-  };
-
-  onValue(ref(db,"typing"), s=>{
-    const v=s.val()||{};
-    typingEl.style.display =
-      Object.keys(v).some(i=>i!==myId && v[i])?"block":"none";
-  });
-}
-
-/* SEND */
-document.getElementById("sendBtn").addEventListener("click", ()=>{
-  const text=msg.value.trim();
-  if(!text) return;
-  push(ref(db,"chat_room"),{
-    senderId:myId,
-    text,
-    ts:Date.now(),
-    deliveredTo:{[myId]:true},
-    seenBy:{[myId]:true}
-  });
-  msg.value="";
-});
-
-/* RENDER */
-function render(id,d){
-  const row=document.createElement("div");
-  row.className="row "+(d.senderId===myId?"me":"fr");
-
-  if(!d.deliveredTo?.[myId]){
-    set(ref(db,`chat_room/${id}/deliveredTo/${myId}`),true);
-  }
-
-  let status="";
-  if(d.senderId===myId){
-    if(d.seenBy && Object.keys(d.seenBy).length>1) status=" 👀 Seen";
-    else if(d.deliveredTo && Object.keys(d.deliveredTo).length>1) status=" ✓✓ Delivered";
-    else status=" ✓ Sent";
-  }else{
-    set(ref(db,`chat_room/${id}/seenBy/${myId}`),true);
-  }
-
-  row.innerHTML=`
-    <div class="bubble">
-      ${d.text}
-      <div class="time">
-        ${new Date(d.ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}
-        ${status}
-      </div>
+        <div class="input-area">
+            <input type="file" id="file-input" accept="image/*" style="display:none" onchange="handleFile()">
+            <button onclick="document.getElementById('file-input').click()">📸</button>
+            <input type="text" id="msg-input" placeholder="Message..." onkeypress="handleEnter(event)">
+            <button onclick="sendMessage()">🚀</button>
+        </div>
     </div>
-  `;
 
-  /* LONG PRESS DELETE */
-  let timer;
-  row.onmousedown=row.ontouchstart=()=>{
-    timer=setTimeout(()=>{
-      if(d.senderId===myId && confirm("Delete message?")){
-        remove(ref(db,`chat_room/${id}`));
-      }
-    },700);
-  };
-  row.onmouseup=row.ontouchend=()=>clearTimeout(timer);
+    <script>
+        // --- CONFIGURATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAPI_m98pfb5y6M5twMqL1oKXEpf1o8CCY",
+            authDomain: "cute-chat-app-85eed.firebaseapp.com",
+            projectId: "cute-chat-app-85eed",
+            storageBucket: "cute-chat-app-85eed.firebasestorage.app",
+            messagingSenderId: "127608145596",
+            appId: "1:127608145596:web:925011780902e048dff2b9",
+            databaseURL: "https://cute-chat-app-85eed-default-rtdb.firebaseio.com"
+        };
 
-  chat.appendChild(row);
-  chat.scrollTop=chat.scrollHeight;
-}
-</script>
+        let database;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            database = firebase.database();
+        } catch (e) { console.error(e); }
+
+        let myId = localStorage.getItem('chat_user_id');
+        if (!myId) {
+            myId = "user_" + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('chat_user_id', myId);
+        }
+
+        // 1. LOGIN
+        function checkLogin() {
+            const pass = document.getElementById('password').value;
+            if (pass === "1986") {
+                document.getElementById('login-screen').style.top = "-100%";
+                initChat();
+            } else {
+                alert("Wrong password! 🚫");
+            }
+        }
+
+        function initChat() {
+            loadMessages();
+            setupTypingListener();
+        }
+
+        // 2. TYPING
+        const msgInput = document.getElementById('msg-input');
+        let typingTimeout;
+
+        msgInput.addEventListener('input', () => {
+            database.ref('typing/' + myId).set(true);
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                database.ref('typing/' + myId).set(false);
+            }, 2000);
+        });
+
+        function setupTypingListener() {
+            database.ref('typing').on('value', (snapshot) => {
+                const data = snapshot.val() || {};
+                const indicator = document.getElementById('typing-indicator');
+                let someoneElseTyping = false;
+                for (let userId in data) {
+                    if (userId !== myId && data[userId] === true) {
+                        someoneElseTyping = true;
+                    }
+                }
+                indicator.style.display = someoneElseTyping ? 'block' : 'none';
+            });
+        }
+
+        // 3. SEND
+        function sendMessage(imageUrl = null) {
+            const text = msgInput.value.trim();
+            if (text !== "" || imageUrl) {
+                database.ref('chat_room').push({
+                    senderId: myId,
+                    text: text,
+                    image: imageUrl,
+                    seen: false,
+                    timestamp: Date.now()
+                });
+                msgInput.value = "";
+                database.ref('typing/' + myId).set(false);
+            }
+        }
+        function handleEnter(e) { if(e.key === 'Enter') sendMessage(); }
+
+        // 4. LOAD & SEEN
+        function loadMessages() {
+            const chatBox = document.getElementById('chat-box');
+
+            database.ref('chat_room').on('child_added', (snapshot) => {
+                const msgId = snapshot.key;
+                const data = snapshot.val();
+                const isMe = data.senderId === myId;
+
+                const container = document.createElement('div');
+                container.classList.add('message-container', isMe ? 'me' : 'friend');
+                container.id = `msg-${msgId}`;
+
+                const bubble = document.createElement('div');
+                bubble.classList.add('message', isMe ? 'me' : 'friend');
+
+                let content = "";
+                if(data.image) content += `<img src="${data.image}" class="media-content"><br>`;
+                if(data.text) content += `<span>${data.text}</span>`;
+                bubble.innerHTML = content;
+
+                container.appendChild(bubble);
+
+                if (isMe) {
+                    const tick = document.createElement('span');
+                    tick.classList.add('tick');
+                    tick.id = `tick-${msgId}`;
+                    tick.innerHTML = "✓✓";
+                    if (data.seen) tick.classList.add('blue');
+                    container.appendChild(tick);
+                }
+
+                chatBox.appendChild(container);
+                chatBox.scrollTop = chatBox.scrollHeight;
+
+                if (!isMe && !data.seen) {
+                    database.ref('chat_room/' + msgId).update({ seen: true });
+                }
+            });
+
+            database.ref('chat_room').on('child_changed', (snapshot) => {
+                const msgId = snapshot.key;
+                const data = snapshot.val();
+                if (data.senderId === myId && data.seen) {
+                    const tickEl = document.getElementById(`tick-${msgId}`);
+                    if (tickEl) tickEl.classList.add('blue');
+                }
+            });
+        }
+
+        // 5. IMAGE & CLEAR
+        function handleFile() {
+            const file = document.getElementById('file-input').files[0];
+            if (file) {
+                if(file.size > 2000000) { alert("Image too big!"); return; }
+                const reader = new FileReader();
+                reader.onload = function(e) { sendMessage(e.target.result); };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function clearChat() {
+            if(confirm("Delete everything?")) {
+                database.ref('chat_room').remove();
+                document.getElementById('chat-box').innerHTML = "";
+            }
+        }
+    </script>
 </body>
 </html>
