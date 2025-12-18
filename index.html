@@ -165,13 +165,16 @@
         let replyData = null;
 
         // --- AUTH ---
-        window.checkLogin = () => {
-            if(document.getElementById('password').value === "1986") {
-                document.getElementById('login-screen').style.opacity = "0";
-                setTimeout(() => document.getElementById('login-screen').style.display = "none", 600);
-                initChat();
-            } else { alert("Access Denied ❌"); }
-        };
+  window.checkLogin = () => {
+    const pass = document.getElementById('password').value;
+    if(pass === "1986") {
+        document.getElementById('login-screen').style.display = "none"; // Direct hide
+        initChat();
+    } else { 
+        alert("Access Denied ❌"); 
+    }
+};
+
 
         function initChat() {
             onChildAdded(ref(db, 'chat_room'), (snap) => {
