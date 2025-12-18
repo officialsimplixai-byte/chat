@@ -192,12 +192,16 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 /* 🔐 PASSWORD */
-window.unlock = () => {
-  if(document.getElementById("pass").value === "1986"){
-    document.getElementById("login").style.display="none";
-    document.getElementById("app").style.display="flex";
+  window.unlock = function () {
+  if (document.getElementById("pass").value === "1986") {
+    document.getElementById("login").style.display = "none";
+    document.getElementById("app").style.display = "flex";
     init();
   } else {
+    alert("Wrong password ❌");
+  }
+};
+     else {
     alert("Wrong password ❌");
   }
 };
