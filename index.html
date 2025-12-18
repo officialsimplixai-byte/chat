@@ -8,21 +8,25 @@
     <style>
         :root { 
             --primary: #ffb7b2; --secondary: #ffdac1; --accent: #ff9aa2; 
-            --bg: #fff0f5; --text: #6e5773; --white: #ffffff; 
+            --bg: #fff0f5; --text: #5d4d5f; --white: #ffffff; 
+            --glass: rgba(255, 255, 255, 0.8);
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body { 
-            font-family: 'Segoe UI', sans-serif; background-color: var(--bg); 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #fdfcfb 0%, #e2d1c3 100%);
             margin: 0; display: flex; justify-content: center; align-items: center; 
-            height: 100vh; color: var(--text); overflow: hidden; 
+            height: 100dvh; color: var(--text); overflow: hidden; 
         }
 
+        /* --- GLASS CONTAINER --- */
         .app-container { 
-            width: 100%; max-width: 400px; height: 95vh; 
-            background: var(--white); border-radius: 25px; 
-            box-shadow: 0 10px 25px rgba(255, 183, 178, 0.5); 
+            width: 100%; max-width: 420px; height: 92vh; 
+            background: var(--glass); backdrop-filter: blur(15px);
+            border-radius: 30px; border: 1px solid rgba(255,255,255,0.3);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1); 
             display: flex; flex-direction: column; position: relative; overflow: hidden;
         }
 
@@ -30,92 +34,114 @@
             .app-container { height: 100dvh; border-radius: 0; }
         }
 
-        /* --- LOGIN --- */
+        /* --- HIDDEN LOGIN --- */
         #login-screen { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            background: linear-gradient(135deg, var(--primary), var(--secondary)); 
+            position: absolute; inset: 0; 
+            background: linear-gradient(135deg, var(--primary), var(--accent)); 
             z-index: 100; display: flex; flex-direction: column; 
-            justify-content: center; align-items: center; transition: 0.5s; 
+            justify-content: center; align-items: center; transition: 0.6s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+        .login-card {
+            background: white; padding: 30px; border-radius: 20px; 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1); text-align: center; width: 80%;
+        }
+        input[type="password"] {
+            width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #eee;
+            margin: 15px 0; text-align: center; font-size: 1.1rem; outline: none;
         }
 
-        /* --- CONTEXT MENU --- */
-        #context-menu {
-            position: fixed; background: white; shadow: 0 4px 15px rgba(0,0,0,0.2);
-            border-radius: 12px; display: none; z-index: 1000; overflow: hidden;
-            border: 1px solid #eee; width: 120px;
+        /* --- HEADER --- */
+        header { 
+            padding: 15px 20px; display: flex; align-items: center; 
+            background: rgba(255,255,255,0.5); border-bottom: 1px solid rgba(0,0,0,0.05); 
         }
-        #context-menu button {
-            display: block; width: 100%; padding: 12px; border: none;
-            background: none; text-align: left; cursor: pointer; border-bottom: 1px solid #f9f9f9;
-        }
+        .status-dot { width: 8px; height: 8px; background: #4ade80; border-radius: 50%; display: inline-block; margin-right: 5px; }
 
-        /* --- CHAT AREA --- */
-        header { padding: 15px; display: flex; align-items: center; border-bottom: 1px solid #f0f0f0; }
-        .chat-area { flex: 1; padding: 15px; overflow-y: auto; background: #fffafa; display: flex; flex-direction: column; gap: 10px; }
-
-        /* --- MESSAGES --- */
-        .message-container { display: flex; flex-direction: column; max-width: 80%; position: relative; }
-        .message-container.me { align-self: flex-end; align-items: flex-end; }
-        .message-container.friend { align-self: flex-start; align-items: flex-start; }
-
-        .message { padding: 10px 15px; border-radius: 18px; font-size: 0.95rem; line-height: 1.4; position: relative; }
-        .message.me { background: var(--primary); color: white; border-bottom-right-radius: 4px; }
-        .message.friend { background: #f0f0f0; color: #333; border-bottom-left-radius: 4px; }
+        /* --- CHAT AREA & SWIPE --- */
+        .chat-area { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth; }
         
+        .message-wrapper { position: relative; width: 100%; overflow: hidden; transition: transform 0.1s; cursor: grab; }
+        
+        .swipe-bg {
+            position: absolute; inset: 0; display: flex; align-items: center; 
+            justify-content: space-between; padding: 0 20px; font-weight: bold; color: white; border-radius: 18px; z-index: 0;
+        }
+        .swipe-delete { background: #ff6b6b; justify-content: flex-start; }
+        .swipe-reply { background: #4dabf7; justify-content: flex-end; }
+
+        .message-container { position: relative; z-index: 1; transition: transform 0.2s; max-width: 85%; }
+        .message-container.me { align-self: flex-end; }
+        .message-container.friend { align-self: flex-start; }
+
+        .message { 
+            padding: 12px 16px; border-radius: 20px; font-size: 0.95rem; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03); position: relative;
+        }
+        .message.me { background: var(--accent); color: white; border-bottom-right-radius: 5px; }
+        .message.friend { background: white; color: var(--text); border-bottom-left-radius: 5px; }
+
+        /* --- REPLY STYLING --- */
         .reply-quote { 
-            background: rgba(0,0,0,0.08); padding: 5px 8px; border-left: 3px solid var(--accent);
-            border-radius: 5px; margin-bottom: 5px; font-size: 0.8rem; opacity: 0.8;
+            background: rgba(0,0,0,0.05); border-left: 3px solid rgba(0,0,0,0.2);
+            padding: 4px 8px; border-radius: 4px; margin-bottom: 6px; font-size: 0.8rem;
         }
 
-        /* --- INPUT & REPLY BAR --- */
-        #reply-bar { 
-            display: none; background: #fdf2f2; padding: 8px 15px; 
-            border-left: 5px solid var(--accent); font-size: 0.8rem;
+        #reply-preview {
+            display: none; background: #f1f3f5; padding: 10px 20px;
+            border-top: 1px solid #eee; font-size: 0.85rem; border-left: 5px solid var(--accent);
         }
-        .input-area { padding: 10px; display: flex; gap: 8px; align-items: center; background: white; }
-        #msg-input { flex: 1; padding: 12px; border-radius: 20px; border: 1px solid #eee; outline: none; }
 
-        .tick { font-size: 0.7rem; margin-top: 2px; color: #bbb; }
-        .tick.blue { color: #34b7f1; }
-        .media-content { max-width: 100%; border-radius: 10px; margin-top: 5px; }
+        /* --- INPUT --- */
+        .input-area { padding: 15px; display: flex; gap: 10px; align-items: center; background: white; }
+        #msg-input { 
+            flex: 1; padding: 12px 18px; border-radius: 25px; 
+            border: 1px solid #eee; outline: none; font-size: 1rem;
+            transition: 0.3s;
+        }
+        #msg-input:focus { border-color: var(--accent); }
+        .btn-round { width: 45px; height: 45px; border-radius: 50%; border: none; background: var(--bg); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+
+        .tick { font-size: 0.7rem; margin-left: 5px; opacity: 0.7; }
+        .tick.blue { color: #34b7f1; opacity: 1; }
     </style>
 </head>
 <body>
 
-    <div id="context-menu">
-        <button onclick="prepareReply()">🔄 Reply</button>
-        <button onclick="deleteMessage()" style="color:red;">🗑️ Delete</button>
-    </div>
-
     <div class="app-container">
         <div id="login-screen">
-            <h2 style="color:white">💖 Bestie Chat</h2>
-            <input type="password" id="password" placeholder="Pass: 1986" 
-                style="padding:12px; border-radius:20px; border:none; margin-bottom:15px; text-align:center;">
-            <button onclick="checkLogin()" style="padding:10px 30px; border-radius:20px; border:none; background:white; color:var(--accent); font-weight:bold;">Enter</button>
+            <div class="login-card">
+                <h2 style="margin:0; color:var(--accent)">BFF PRO</h2>
+                <p style="font-size:0.8rem; color:#888">Secure encrypted chat</p>
+                <input type="password" id="password" placeholder="Secret Key">
+                <button onclick="checkLogin()" style="width:100%; padding:12px; border-radius:12px; border:none; background:var(--accent); color:white; font-weight:bold; cursor:pointer;">Unlock Chat</button>
+            </div>
         </div>
 
         <header>
-            <div style="font-size: 1.5rem;">🦄</div>
-            <div style="margin-left:10px">
-                <b style="color:var(--accent)">Bestie</b>
-                <div id="typing-indicator" style="font-size:0.7rem; color:var(--accent); display:none;">typing...</div>
+            <div style="font-size: 1.8rem;">🦄</div>
+            <div style="margin-left:12px">
+                <div style="font-weight:bold; font-size:1.1rem">Bestie</div>
+                <div id="typing-indicator" style="font-size:0.75rem; color:var(--accent); display:none;">
+                    <span class="status-dot"></span> typing...
+                </div>
             </div>
-            <button onclick="clearAll()" style="margin-left:auto; border:none; background:none; opacity:0.3;">🗑️</button>
+            <button onclick="clearAll()" style="margin-left:auto; border:none; background:none; font-size:1.2rem; opacity:0.3">🗑️</button>
         </header>
 
         <div class="chat-area" id="chat-box"></div>
 
-        <div id="reply-bar">
-            <span id="reply-text">Replying...</span>
-            <button onclick="cancelReply()" style="float:right; border:none; background:none;">✕</button>
+        <div id="reply-preview">
+            <div style="display:flex; justify-content:space-between">
+                <span id="reply-text" style="color:#666; font-style:italic">Replying...</span>
+                <span onclick="cancelReply()" style="cursor:pointer">✕</span>
+            </div>
         </div>
 
         <div class="input-area">
-            <button onclick="document.getElementById('file-input').click()">📷</button>
+            <button class="btn-round" onclick="document.getElementById('file-input').click()">📷</button>
             <input type="file" id="file-input" hidden onchange="handleFile()">
-            <input type="text" id="msg-input" placeholder="Aa" onkeypress="if(event.key==='Enter') sendMessage()">
-            <button onclick="sendMessage()" style="font-size:1.5rem">🚀</button>
+            <input type="text" id="msg-input" placeholder="Type a message..." onkeypress="if(event.key==='Enter') sendMessage()">
+            <button class="btn-round" style="background:var(--accent); color:white" onclick="sendMessage()">🚀</button>
         </div>
     </div>
 
@@ -136,109 +162,108 @@
         let myId = localStorage.getItem('chat_id') || "user_" + Math.random().toString(36).substr(2, 5);
         localStorage.setItem('chat_id', myId);
 
-        let selectedMsgId = null;
         let replyData = null;
-        let holdTimer;
 
         // --- AUTH ---
         window.checkLogin = () => {
             if(document.getElementById('password').value === "1986") {
-                document.getElementById('login-screen').style.top = "-100%";
+                document.getElementById('login-screen').style.opacity = "0";
+                setTimeout(() => document.getElementById('login-screen').style.display = "none", 600);
                 initChat();
-            }
+            } else { alert("Access Denied ❌"); }
         };
 
         function initChat() {
-            const chatRef = ref(db, 'chat_room');
-            
-            onChildAdded(chatRef, (snap) => {
+            onChildAdded(ref(db, 'chat_room'), (snap) => {
                 renderMsg(snap.key, snap.val());
                 if(snap.val().senderId !== myId) update(ref(db, `chat_room/${snap.key}`), {seen: true});
             });
 
-            onChildChanged(chatRef, (snap) => {
+            onChildChanged(ref(db, 'chat_room'), (snap) => {
                 const tick = document.querySelector(`#msg-${snap.key} .tick`);
                 if(tick && snap.val().seen) tick.classList.add('blue');
             });
 
-            // Typing
             onValue(ref(db, 'typing'), (snap) => {
                 const users = snap.val() || {};
-                const isTyping = Object.keys(users).some(id => id !== myId && users[id]);
-                document.getElementById('typing-indicator').style.display = isTyping ? 'block' : 'none';
+                const typing = Object.keys(users).some(id => id !== myId && users[id]);
+                document.getElementById('typing-indicator').style.display = typing ? 'block' : 'none';
             });
         }
 
-        // --- CORE FUNCTIONS ---
+        // --- SWIPE LOGIC ---
+        function attachSwipe(el, id, text) {
+            let startX = 0, currentX = 0;
+            
+            el.addEventListener('touchstart', (e) => startX = e.touches[0].clientX);
+            el.addEventListener('touchmove', (e) => {
+                currentX = e.touches[0].clientX - startX;
+                if(currentX > 100) el.style.transform = `translateX(100px)`; // Slide Right (Delete)
+                else if(currentX < -100) el.style.transform = `translateX(-100px)`; // Slide Left (Reply)
+                else el.style.transform = `translateX(${currentX}px)`;
+            });
+
+            el.addEventListener('touchend', () => {
+                if(currentX > 80) { // DELETE TRIGGER
+                    if(confirm("Delete message?")) remove(ref(db, `chat_room/${id}`));
+                } else if(currentX < -80) { // REPLY TRIGGER
+                    prepareReply(text);
+                }
+                el.style.transform = `translateX(0)`;
+                currentX = 0;
+            });
+        }
+
+        // --- ACTIONS ---
         window.sendMessage = (img = null) => {
             const val = document.getElementById('msg-input').value.trim();
             if(!val && !img) return;
 
             push(ref(db, 'chat_room'), {
-                senderId: myId,
-                text: val,
-                image: img,
-                replyTo: replyData,
-                seen: false,
-                ts: Date.now()
+                senderId: myId, text: val, image: img,
+                replyTo: replyData, seen: false, ts: Date.now()
             });
 
             document.getElementById('msg-input').value = "";
             cancelReply();
-            set(ref(db, `typing/${myId}`), false);
         };
 
         function renderMsg(id, data) {
             const box = document.getElementById('chat-box');
             const isMe = data.senderId === myId;
-            const div = document.createElement('div');
-            div.className = `message-container ${isMe ? 'me' : 'friend'}`;
-            div.id = `msg-${id}`;
-
-            div.innerHTML = `
-                <div class="message ${isMe ? 'me' : 'friend'}">
-                    ${data.replyTo ? `<div class="reply-quote">⤴️ ${data.replyTo}</div>` : ''}
-                    ${data.image ? `<img src="${data.image}" class="media-content">` : ''}
-                    ${data.text ? `<div>${data.text}</div>` : ''}
+            
+            const wrapper = document.createElement('div');
+            wrapper.className = 'message-wrapper';
+            wrapper.id = `msg-${id}`;
+            
+            wrapper.innerHTML = `
+                <div class="swipe-bg swipe-delete">🗑️ Delete</div>
+                <div class="swipe-bg swipe-reply">🔄 Reply</div>
+                <div class="message-container ${isMe ? 'me' : 'friend'}">
+                    <div class="message ${isMe ? 'me' : 'friend'}">
+                        ${data.replyTo ? `<div class="reply-quote">⤴️ ${data.replyTo}</div>` : ''}
+                        ${data.image ? `<img src="${data.image}" style="width:100%; border-radius:10px">` : ''}
+                        ${data.text ? `<div>${data.text}</div>` : ''}
+                    </div>
+                    ${isMe ? `<span class="tick ${data.seen ? 'blue' : ''}">✓✓</span>` : ''}
                 </div>
-                ${isMe ? `<span class="tick ${data.seen ? 'blue' : ''}">✓✓</span>` : ''}
             `;
 
-            // Long Press Logic
-            div.onmousedown = div.ontouchstart = (e) => {
-                holdTimer = setTimeout(() => {
-                    selectedMsgId = id;
-                    replyData = data.text || "Image";
-                    const menu = document.getElementById('context-menu');
-                    menu.style.display = 'block';
-                    menu.style.top = (e.pageY || e.touches[0].pageY) + 'px';
-                    menu.style.left = (e.pageX || e.touches[0].pageX) + 'px';
-                }, 500);
-            };
-            div.onmouseup = div.onmouseleave = div.ontouchend = () => clearTimeout(holdTimer);
-
-            box.appendChild(div);
+            attachSwipe(wrapper.querySelector('.message-container'), id, data.text || "Image");
+            box.appendChild(wrapper);
             box.scrollTop = box.scrollHeight;
         }
 
-        // --- UI HELPERS ---
-        window.prepareReply = () => {
-            document.getElementById('reply-bar').style.display = 'block';
-            document.getElementById('reply-text').innerText = "Replying to: " + replyData;
-            document.getElementById('context-menu').style.display = 'none';
-        };
+        function prepareReply(text) {
+            replyData = text;
+            document.getElementById('reply-preview').style.display = 'block';
+            document.getElementById('reply-text').innerText = "Replying to: " + text;
+            document.getElementById('msg-input').focus();
+        }
 
         window.cancelReply = () => {
             replyData = null;
-            document.getElementById('reply-bar').style.display = 'none';
-        };
-
-        window.deleteMessage = () => {
-            if(confirm("Delete message?")) {
-                remove(ref(db, `chat_room/${selectedMsgId}`));
-                document.getElementById(`msg-${selectedMsgId}`).remove();
-            }
-            document.getElementById('context-menu').style.display = 'none';
+            document.getElementById('reply-preview').style.display = 'none';
         };
 
         window.handleFile = () => {
@@ -248,19 +273,14 @@
             reader.readAsDataURL(file);
         };
 
-        window.clearAll = () => { if(confirm("Clear all?")) remove(ref(db, 'chat_room')); location.reload(); };
+        window.clearAll = () => { if(confirm("Clear chat?")) remove(ref(db, 'chat_room')); location.reload(); };
 
-        // Typing status
+        // Typing logic
         document.getElementById('msg-input').oninput = () => {
             set(ref(db, `typing/${myId}`), true);
             clearTimeout(window.tT);
             window.tT = setTimeout(() => set(ref(db, `typing/${myId}`), false), 2000);
         };
-
-        // Close menu on click
-        document.addEventListener('click', (e) => {
-            if(!e.target.closest('.message-container')) document.getElementById('context-menu').style.display = 'none';
-        });
     </script>
 </body>
 </html>
