@@ -215,7 +215,15 @@ const DAY=24*60*60*1000;
 
 function init(){
 
-  onChildAdded(ref(db,"chat_room"), snap=>{
+  import { query, orderByChild } 
+from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
+const chatQuery = query(
+  ref(db, "chat_room"),
+  orderByChild("ts")
+);
+
+onChildAdded(chatQuery, snap => {
     const d=snap.val(), id=snap.key;
     if(!d || !d.ts) return;
     if(Date.now()-d.ts > DAY){
