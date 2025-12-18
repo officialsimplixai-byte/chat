@@ -24,7 +24,7 @@
             display: flex; flex-direction: column; position: relative;
         }
 
-        /* --- SECURE LOGIN --- */
+        /* --- LOGIN SCREEN --- */
         #login-screen { 
             position: fixed; inset: 0; background: var(--accent); 
             z-index: 2000; display: flex; flex-direction: column; 
@@ -39,7 +39,7 @@
             background: white; border-bottom: 1px solid rgba(0,0,0,0.05); 
         }
 
-        /* --- CHAT AREA & SLIDE --- */
+        /* --- CHAT AREA --- */
         .chat-area { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
         
         .msg-row { position: relative; width: 100%; }
@@ -86,8 +86,7 @@
                 <div style="font-weight:bold; font-size:1.1rem">Bestie</div>
                 <div id="typing" style="font-size:0.75rem; color:var(--accent); display:none;">typing...</div>
             </div>
-            <button onclick="window.location.href='tel:7726859477'" style="margin-left:auto; border:none; background:none; font-size:1.4rem; cursor:pointer;">📞</button>
-        </header>
+            </header>
 
         <div class="chat-area" id="chat-box"></div>
 
@@ -115,8 +114,13 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-        const myId = localStorage.getItem('chat_uid') || "u_" + Math.random().toString(36).substr(2, 4);
-        localStorage.setItem('chat_uid', myId);
+
+        // --- ID PERSISTENCE LOGIC ---
+        let myId = localStorage.getItem('bff_chat_user_id');
+        if (!myId) {
+            myId = "u_" + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('bff_chat_user_id', myId);
+        }
 
         let activeReply = null;
 
@@ -128,6 +132,7 @@
         };
 
         function init() {
+            document.getElementById('chat-box').innerHTML = "";
             onChildAdded(ref(db, 'chat_room'), (snap) => render(snap.key, snap.val()));
             onValue(ref(db, 'typing'), (snap) => {
                 const typing = snap.val() || {};
@@ -164,7 +169,6 @@
                 </div>
             `;
 
-            // Gesture Logic
             const bubbleCont = row.querySelector('.msg-bubble-container');
             let startX = 0, moveX = 0;
             
@@ -175,8 +179,14 @@
                 bubbleCont.style.transform = `translateX(${moveX}px)`;
             };
             bubbleCont.ontouchend = () => {
-                if(moveX > 80) { if(confirm("Delete?")) remove(ref(db, `chat_room/${id}`)); location.reload(); }
-                else if(moveX < -80) prepareReply(data.text);
+                if(moveX > 80) { 
+                    if(confirm("Delete message?")) {
+                        remove(ref(db, `chat_room/${id}`));
+                        row.remove();
+                    }
+                } else if(moveX < -80) {
+                    prepareReply(data.text);
+                }
                 bubbleCont.style.transform = "translateX(0)";
                 moveX = 0;
             };
