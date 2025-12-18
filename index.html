@@ -42,14 +42,14 @@
         /* --- CHAT AREA --- */
         .chat-area { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
         
-        .msg-row { position: relative; width: 100%; }
+        .msg-row { position: relative; width: 100%; overflow: hidden; border-radius: 20px; }
         .swipe-action {
             position: absolute; inset: 0; display: flex; align-items: center; 
             padding: 0 25px; font-weight: bold; color: white; border-radius: 20px; z-index: 0;
         }
         .del-bg { background: #ff6b6b; justify-content: flex-start; }
 
-        .msg-bubble-container { position: relative; z-index: 1; transition: transform 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28); max-width: 85%; }
+        .msg-bubble-container { position: relative; z-index: 1; transition: transform 0.2s ease; max-width: 85%; }
         .me-container { align-self: flex-end; }
         .fr-container { align-self: flex-start; }
 
@@ -80,7 +80,7 @@
                 <div style="font-weight:bold; font-size:1.1rem">Bestie</div>
                 <div id="typing" style="font-size:0.75rem; color:var(--accent); display:none;">typing...</div>
             </div>
-            </header>
+        </header>
 
         <div class="chat-area" id="chat-box"></div>
 
@@ -156,7 +156,7 @@
             bubbleCont.ontouchstart = (e) => startX = e.touches[0].clientX;
             bubbleCont.ontouchmove = (e) => {
                 moveX = e.touches[0].clientX - startX;
-                // Sirf right swipe (delete) allow hai ab
+                // Sirf right side swipe (delete) allow hai, left block kar diya
                 if(moveX < 0) moveX = 0; 
                 if(moveX > 100) moveX = 100;
                 bubbleCont.style.transform = `translateX(${moveX}px)`;
