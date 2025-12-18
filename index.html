@@ -48,7 +48,6 @@
             padding: 0 25px; font-weight: bold; color: white; border-radius: 20px; z-index: 0;
         }
         .del-bg { background: #ff6b6b; justify-content: flex-start; }
-        .rep-bg { background: #4dabf7; justify-content: flex-end; }
 
         .msg-bubble-container { position: relative; z-index: 1; transition: transform 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28); max-width: 85%; }
         .me-container { align-self: flex-end; }
@@ -57,11 +56,6 @@
         .bubble { padding: 12px 18px; border-radius: 22px; font-size: 0.95rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); line-height: 1.4; }
         .me-bubble { background: var(--accent); color: white; border-bottom-right-radius: 4px; }
         .fr-bubble { background: white; color: var(--text); border-bottom-left-radius: 4px; }
-
-        .reply-tag { background: rgba(0,0,0,0.06); padding: 5px 10px; border-left: 3px solid var(--accent); border-radius: 6px; margin-bottom: 8px; font-size: 0.8rem; opacity: 0.8; }
-
-        /* --- REPLY BAR --- */
-        #reply-bar { display: none; background: #fff5f5; padding: 10px 20px; border-top: 1px solid #ffe3e3; border-left: 5px solid var(--accent); font-size: 0.85rem; }
 
         /* --- INPUT --- */
         .input-area { padding: 15px; display: flex; gap: 10px; align-items: center; background: white; border-top: 1px solid #f0f0f0; }
@@ -90,13 +84,6 @@
 
         <div class="chat-area" id="chat-box"></div>
 
-        <div id="reply-bar">
-            <div style="display:flex; justify-content:space-between">
-                <span id="reply-text" style="color:#666">Replying...</span>
-                <b onclick="cancelReply()" style="cursor:pointer">✕</b>
-            </div>
-        </div>
-
         <div class="input-area">
             <input type="text" id="msg-input" placeholder="Type message..." onkeypress="if(event.key==='Enter') send()">
             <button onclick="send()" style="border:none; background:var(--accent); color:white; width:45px; height:45px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer;">🚀</button>
@@ -115,14 +102,11 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // --- ID PERSISTENCE LOGIC ---
         let myId = localStorage.getItem('bff_chat_user_id');
         if (!myId) {
             myId = "u_" + Math.random().toString(36).substr(2, 9);
             localStorage.setItem('bff_chat_user_id', myId);
         }
-
-        let activeReply = null;
 
         window.unlock = () => {
             if(document.getElementById('passInput').value === "1986") {
@@ -145,10 +129,9 @@
             const val = document.getElementById('msg-input').value.trim();
             if(!val) return;
             push(ref(db, 'chat_room'), {
-                senderId: myId, text: val, replyTo: activeReply, ts: Date.now()
+                senderId: myId, text: val, ts: Date.now()
             });
             document.getElementById('msg-input').value = "";
-            cancelReply();
         };
 
         function render(id, data) {
@@ -160,10 +143,8 @@
             
             row.innerHTML = `
                 <div class="swipe-action del-bg">🗑️ Delete</div>
-                <div class="swipe-action rep-bg">🔄 Reply</div>
                 <div class="msg-bubble-container ${isMe ? 'me-container' : 'fr-container'}">
                     <div class="bubble ${isMe ? 'me-bubble' : 'fr-bubble'}">
-                        ${data.replyTo ? `<div class="reply-tag">⤴️ ${data.replyTo}</div>` : ''}
                         ${data.text}
                     </div>
                 </div>
@@ -175,7 +156,9 @@
             bubbleCont.ontouchstart = (e) => startX = e.touches[0].clientX;
             bubbleCont.ontouchmove = (e) => {
                 moveX = e.touches[0].clientX - startX;
-                if(moveX > 100) moveX = 100; if(moveX < -100) moveX = -100;
+                // Sirf right swipe (delete) allow hai ab
+                if(moveX < 0) moveX = 0; 
+                if(moveX > 100) moveX = 100;
                 bubbleCont.style.transform = `translateX(${moveX}px)`;
             };
             bubbleCont.ontouchend = () => {
@@ -184,8 +167,6 @@
                         remove(ref(db, `chat_room/${id}`));
                         row.remove();
                     }
-                } else if(moveX < -80) {
-                    prepareReply(data.text);
                 }
                 bubbleCont.style.transform = "translateX(0)";
                 moveX = 0;
@@ -194,18 +175,6 @@
             box.appendChild(row);
             box.scrollTop = box.scrollHeight;
         }
-
-        function prepareReply(text) {
-            activeReply = text;
-            document.getElementById('reply-bar').style.display = 'block';
-            document.getElementById('reply-text').innerText = "Replying to: " + text;
-            document.getElementById('msg-input').focus();
-        }
-
-        window.cancelReply = () => {
-            activeReply = null;
-            document.getElementById('reply-bar').style.display = 'none';
-        };
 
         document.getElementById('msg-input').oninput = () => {
             set(ref(db, `typing/${myId}`), true);
