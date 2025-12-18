@@ -20,7 +20,7 @@
 
         .app-container { 
             width: 100%; max-width: 420px; height: 100dvh; 
-            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px);
+            background: rgba(255, 255, 255, 0.95); /* Visibility thodi badhai hai */
             display: flex; flex-direction: column; position: relative;
         }
 
@@ -36,26 +36,32 @@
         /* --- HEADER --- */
         header { 
             padding: 15px 20px; display: flex; align-items: center; 
-            background: white; border-bottom: 1px solid rgba(0,0,0,0.05); 
+            background: white; border-bottom: 1px solid rgba(0,0,0,0.05); z-index: 10;
         }
 
         /* --- CHAT AREA --- */
-        .chat-area { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
-        
-        .msg-row { position: relative; width: 100%; overflow: hidden; border-radius: 20px; }
-        .swipe-action {
-            position: absolute; inset: 0; display: flex; align-items: center; 
-            padding: 0 25px; font-weight: bold; color: white; border-radius: 20px; z-index: 0;
+        .chat-area { 
+            flex: 1; padding: 15px; overflow-y: auto; 
+            display: flex; flex-direction: column; gap: 15px; 
+            scroll-behavior: smooth; background: transparent;
+            min-height: 0; /* Yeh ensure karta hai ki flex container collapse na ho */
         }
-        .del-bg { background: #ff6b6b; justify-content: flex-start; }
+        
+        .msg-row { position: relative; width: 100%; display: flex; flex-direction: column; }
+        .swipe-action {
+            position: absolute; left: 0; top: 0; bottom: 0; width: 100px;
+            display: flex; align-items: center; padding-left: 20px;
+            font-weight: bold; color: white; border-radius: 15px; z-index: 0;
+            background: #ff6b6b;
+        }
 
         .msg-bubble-container { position: relative; z-index: 1; transition: transform 0.2s ease; max-width: 85%; }
         .me-container { align-self: flex-end; }
         .fr-container { align-self: flex-start; }
 
-        .bubble { padding: 12px 18px; border-radius: 22px; font-size: 0.95rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); line-height: 1.4; }
+        .bubble { padding: 12px 18px; border-radius: 22px; font-size: 0.95rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); line-height: 1.4; word-wrap: break-word; }
         .me-bubble { background: var(--accent); color: white; border-bottom-right-radius: 4px; }
-        .fr-bubble { background: white; color: var(--text); border-bottom-left-radius: 4px; }
+        .fr-bubble { background: #f0f0f0; color: var(--text); border-bottom-left-radius: 4px; }
 
         /* --- INPUT --- */
         .input-area { padding: 15px; display: flex; gap: 10px; align-items: center; background: white; border-top: 1px solid #f0f0f0; }
@@ -92,7 +98,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-        import { getDatabase, ref, push, set, onValue, onChildAdded, remove } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+        import { getDatabase, ref, push, set, onValue, onChildAdded, remove, onChildRemoved } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAPI_m98pfb5y6M5twMqL1oKXEpf1o8CCY",
@@ -116,8 +122,20 @@
         };
 
         function init() {
-            document.getElementById('chat-box').innerHTML = "";
-            onChildAdded(ref(db, 'chat_room'), (snap) => render(snap.key, snap.val()));
+            const box = document.getElementById('chat-box');
+            box.innerHTML = ""; // Clear loader/old data
+
+            // Listen for new messages
+            onChildAdded(ref(db, 'chat_room'), (snap) => {
+                render(snap.key, snap.val());
+            });
+
+            // Listen for deletions (Taaki real-time delete ho)
+            onChildRemoved(ref(db, 'chat_room'), (snap) => {
+                const el = document.getElementById(`row-${snap.key}`);
+                if(el) el.remove();
+            });
+
             onValue(ref(db, 'typing'), (snap) => {
                 const typing = snap.val() || {};
                 const isTyping = Object.keys(typing).some(id => id !== myId && typing[id]);
@@ -136,13 +154,15 @@
 
         function render(id, data) {
             const box = document.getElementById('chat-box');
+            if(document.getElementById(`row-${id}`)) return; // Duplicate check
+
             const isMe = data.senderId === myId;
             const row = document.createElement('div');
             row.className = 'msg-row';
             row.id = `row-${id}`;
             
             row.innerHTML = `
-                <div class="swipe-action del-bg">🗑️ Delete</div>
+                <div class="swipe-action">🗑️ Delete</div>
                 <div class="msg-bubble-container ${isMe ? 'me-container' : 'fr-container'}">
                     <div class="bubble ${isMe ? 'me-bubble' : 'fr-bubble'}">
                         ${data.text}
@@ -156,7 +176,6 @@
             bubbleCont.ontouchstart = (e) => startX = e.touches[0].clientX;
             bubbleCont.ontouchmove = (e) => {
                 moveX = e.touches[0].clientX - startX;
-                // Sirf right side swipe (delete) allow hai, left block kar diya
                 if(moveX < 0) moveX = 0; 
                 if(moveX > 100) moveX = 100;
                 bubbleCont.style.transform = `translateX(${moveX}px)`;
@@ -165,7 +184,6 @@
                 if(moveX > 80) { 
                     if(confirm("Delete message?")) {
                         remove(ref(db, `chat_room/${id}`));
-                        row.remove();
                     }
                 }
                 bubbleCont.style.transform = "translateX(0)";
@@ -173,7 +191,7 @@
             };
 
             box.appendChild(row);
-            box.scrollTop = box.scrollHeight;
+            box.scrollTop = box.scrollHeight; // Auto scroll to bottom
         }
 
         document.getElementById('msg-input').oninput = () => {
